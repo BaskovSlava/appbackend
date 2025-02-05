@@ -2,23 +2,29 @@
 import {CreateCourseModel} from "../../src/models/CreateCourseModel";
 
 const request = require('supertest')
-import {app, HTTP_STATUSES} from "../../src";
 import {UpdateCourseModel} from "../../src/models/UpdateCourseModel";
+import {app} from "../../src/app";
+import {HTTP_STATUSES} from "../../src/utils";
+
+
+const getRequest = () => {
+    return request(app);
+}
 
 describe('/course', () => {
 
     beforeAll( async () => {
-        await request(app).delete('/__test__/data');
+        await getRequest().delete('/__test__/data');
     }) // перед всеми тестами один раз выполни функцию
 
     it('should return 200 and empty array', async () => {
-        await request(app)
+        await getRequest()
             .get('/courses')
             .expect(HTTP_STATUSES.OK_200, [])
     })
 
     it('should return 404 for not existing course', async () => {
-        await request(app)
+        await getRequest()
             .get('/courses/9')
             .expect(HTTP_STATUSES.NOT_FOUND_404)
     })
@@ -26,12 +32,12 @@ describe('/course', () => {
     it(`shouldn't  create a new course with incorrect input data`, async () => {
         const data: CreateCourseModel = {title: ""};
 
-        await request(app)
+        await getRequest()
             .post('/courses')
             .send(data)
             .expect(HTTP_STATUSES.BadRequest_400)
 
-        await request(app)
+        await getRequest()
             .get('/courses')
             .expect(HTTP_STATUSES.OK_200, [])
     })
@@ -39,7 +45,7 @@ describe('/course', () => {
     let createdCourse1: any = null;
     it(`should create a new course with correct input data`, async () => {
         const data: CreateCourseModel = {title: "New course with correct input data"};
-        const createResponse =  await request(app)
+        const createResponse =  await getRequest()
             .post('/courses')
             .send(data)
             .expect(HTTP_STATUSES.CREATED_201)
@@ -51,7 +57,7 @@ describe('/course', () => {
             title: data.title,
         })
 
-        await request(app)
+        await getRequest()
             .get('/courses')
             .expect(HTTP_STATUSES.OK_200, [createdCourse1])
     })
@@ -60,7 +66,7 @@ describe('/course', () => {
     it(`create one more course`, async () =>  {
         const data: CreateCourseModel = {title: "New course with correct input data 2"};
 
-        const createResponse =  await request(app)
+        const createResponse =  await getRequest()
             .post('/courses')
             .send(data)
             .expect(HTTP_STATUSES.CREATED_201)
@@ -72,25 +78,25 @@ describe('/course', () => {
             title: data.title
         })
 
-        await request(app)
+        await getRequest()
             .get('/courses')
             .expect(HTTP_STATUSES.OK_200, [createdCourse1, createdCourse2])
 
     })
 
     it(`shouldn't update course with incorrect input data`, async () => {
-        await request(app)
+        await getRequest()
             .put('/courses/' + createdCourse1.id)
             .send({title: ""})
             .expect(HTTP_STATUSES.BadRequest_400)
 
-        await request(app)
+        await getRequest()
             .get('/courses/' + createdCourse1.id)
             .expect(HTTP_STATUSES.OK_200, createdCourse1)
     })
 
     it(`shouldn't update course that not exist`, async () => {
-        await request(app)
+        await getRequest()
             .put('/courses/' + -100)
             .send({title: "good title"})
             .expect(HTTP_STATUSES.NOT_FOUND_404)
@@ -99,41 +105,41 @@ describe('/course', () => {
     it(`should update course with correct input data`, async () => {
         const data: UpdateCourseModel = {title: "good new title"};
 
-        await request(app)
+        await getRequest()
             .put('/courses/' + createdCourse1.id)
             .send(data)
             .expect(HTTP_STATUSES.NO_CONNECT_204)
 
-        await request(app)
+        await getRequest()
             .get('/courses/'  + createdCourse1.id)
             .expect(HTTP_STATUSES.OK_200, {
                 ...createdCourse1,
                 title: data.title,
             })
 
-        await request(app)
+        await getRequest()
             .get('/courses/' + createdCourse2.id)
             .expect(HTTP_STATUSES.OK_200, createdCourse2)
     })
 
     it(`should delete both courses with correct input data`, async () => {
-        await request(app)
+        await getRequest()
             .delete('/courses/' + createdCourse1.id)
             .expect(HTTP_STATUSES.NO_CONNECT_204)
 
-        await request(app)
+        await getRequest()
             .get('/courses/'  + createdCourse1.id)
             .expect(HTTP_STATUSES.NOT_FOUND_404)
 
-        await request(app)
+        await getRequest()
             .delete('/courses/' + createdCourse2.id)
             .expect(HTTP_STATUSES.NO_CONNECT_204)
 
-        await request(app)
+        await getRequest()
             .get('/courses/'  + createdCourse2.id)
             .expect(HTTP_STATUSES.NOT_FOUND_404)
 
-        await request(app)
+        await getRequest()
             .get('/courses')
             .expect(HTTP_STATUSES.OK_200, [])
     })
